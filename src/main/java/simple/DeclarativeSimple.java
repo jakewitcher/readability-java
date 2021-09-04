@@ -1,13 +1,12 @@
 package simple;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
 import models.Item;
 import models.Meal;
+import org.apache.commons.lang3.RandomUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -47,24 +46,29 @@ public class DeclarativeSimple {
                 .sum();
     }
 
-    public Mono<String> getItemDescription(Supplier<Mono<Item>> itemSupplier) {
-        return itemSupplier.get()
+    public Mono<String> getItemDescription(Mono<Item> item) {
+        return item
                 .map(Item::getDescription)
                 .onErrorReturn("something has gone terribly wrong");
     }
 
-    public List<String> getDescriptionsOfLargestQtyItems(List<Meal> itemDescriptions) {
-        return Lists.transform(itemDescriptions,
-                Functions.compose(this::getItemDescription, this::findLargestQtyItem));
+    public Flux<String> getCouponCodesForValidItems(Flux<Item> items) {
+        return items
+                .map(Item::getUpc)
+                .flatMap(this::getCouponCodeByUpcIfExists)
+                .onErrorContinue(this::logCouponCodeError)
+                .distinct();
     }
 
-    private Item findLargestQtyItem(Meal meal) {
-        return meal.getItems().stream()
-                .max(Comparator.comparing(Item::getQuantity))
-                .orElseThrow();
+    private void logCouponCodeError(Throwable ex, Object obj) {
+        System.out.println(ex.getMessage());
     }
 
-    private String getItemDescription(Item item) {
-        return item.getDescription();
+    private Mono<String> getCouponCodeByUpcIfExists(String upc) {
+        if (RandomUtils.nextInt(1, 11) < 8) {
+            return Mono.just("coupon code");
+        }
+
+        return Mono.empty();
     }
 }

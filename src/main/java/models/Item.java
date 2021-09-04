@@ -3,6 +3,7 @@ package models;
 import java.util.Objects;
 
 public class Item {
+    private String upc = "0123";
     private final String description;
     private final Double quantity;
     private final UnitOfMeasurement unit;
@@ -45,5 +46,13 @@ public class Item {
     @Override
     public int hashCode() {
         return Objects.hash(description, quantity, unit);
+    }
+
+    public String getUpc() {
+        return upc;
+    }
+
+    public void setUpc(String upc) {
+        this.upc = upc;
     }
 }

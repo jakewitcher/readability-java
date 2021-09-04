@@ -4,11 +4,9 @@ import models.GroceryList;
 import models.Item;
 import models.Meal;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -54,6 +52,33 @@ public class ArrangedSimple {
                 .collect(Collectors.toList());
 
         return new GroceryList(description, sortedItemsList);
+    }
+
+    public GroceryList createNewGroceryList4(String description, List<Meal> meals) {
+        var itemsMap = createItemsMap(meals);
+        var accumulatedQtyItemsList = accumulateGroupedItemsQty(itemsMap);
+        var sortedItemsList = sortItems(accumulatedQtyItemsList);
+
+        return new GroceryList(description, sortedItemsList);
+    }
+
+    private Map<String, List<Item>> createItemsMap(List<Meal> meals) {
+        return meals.stream()
+                .flatMap(meal -> meal.getItems().stream())
+                .collect(groupingBy(Item::getDescription));
+    }
+
+    private Stream<Item> accumulateGroupedItemsQty(Map<String, List<Item>> itemsMap) {
+        return itemsMap.values().stream()
+                .map(itemList -> itemList.stream()
+                        .reduce(this::combineItems)
+                        .orElseThrow(IllegalArgumentException::new));
+    }
+
+    private List<Item> sortItems(Stream<Item> accumulatedQtyItemsList) {
+        return accumulatedQtyItemsList
+                .sorted(Comparator.comparing(Item::getDescription))
+                .collect(Collectors.toList());
     }
 
     private Item combineItems(Item item1, Item item2) {
